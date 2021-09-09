@@ -1,0 +1,20 @@
+FROM python:3.8
+
+# copy all project
+COPY . .
+
+# package name
+ARG COMPONENT_NAME
+ENV COMPONENT_NAME=$COMPONENT_NAME
+
+# install dependencies
+RUN pip install -e .
+RUN pip install -U sphinx
+RUN pip install sphinx-rtd-theme
+
+# docs generation
+RUN sphinx-apidoc -f -e -o build $COMPONENT_NAME
+RUN cp conf.py ./build/
+RUN cp index.rst ./build/
+RUN sphinx-build -b html build docs -c .
+RUN rm -rf build
