@@ -59,19 +59,21 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         queue = KafkaMessageQueue("myqueue")
         queue.configure(ConfigParams.from_tuples(
-          "topic", "mytopic",
-          "connection.protocol", "tcp"
-          "connection.host", "localhost"
-          "connection.port", 9092
+            "topic", "mytopic",
+            'connection.protocol', 'tcp',
+            "connection.host", "localhost",
+            "connection.port", 9092,
         ))
 
         queue.open("123")
         queue.send("123", MessageEnvelope(None, "mymessage", "ABC"))
-        queue.receive("123")
+        message = queue.receive("123", 10000)
+
+        print(message)
 
         if message is not None:
             ...
-            queue.complete("123", message)
+            queue.complete(message)
 
 
     """

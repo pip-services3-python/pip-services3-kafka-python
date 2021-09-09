@@ -130,6 +130,63 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         """
         return self._connection is not None
 
+    def __create_config(self, kind: str, options: dict = None) -> dict:
+        """
+        Create config for kafka objects
+
+        :param kind: config for producer, consumer or admin
+        :param options: additional config
+        :return: dict with config
+        """
+        config = self._connection_resolver.resolve(None)
+        brokers = config.get_as_string('brokers')
+        options = options or {}
+
+        options.update({'client_id': self._client_id,
+                        'request_timeout_ms': self._request_timeout,
+
+                        'reconnect_backoff_max_ms': self._connect_timeout,
+                        'bootstrap_servers': brokers.split(','),
+                        'ssl_check_hostname': config.get_as_boolean('ssl')
+                        })
+
+        if kind == 'producer':
+            options['retries'] = self._max_retries
+
+        if kind == 'consumer':
+            if options.get('session_timeout_ms'):
+                options['session_timeout_ms'] = int(options['session_timeout_ms'])
+            if options.get('heartbeat_interval_ms'):
+                options['heartbeat_interval_ms'] = int(options['heartbeat_interval_ms'])
+
+            options['enable_auto_commit'] = options.get('enable_auto_commit', True)
+            options['auto_commit_interval_ms'] = options.get('auto_commit_interval_ms', 5000)
+
+        username = config.get_as_string("username")
+        password = config.get_as_string("password")
+        mechanism = config.get_as_string_with_default("mechanism", "plain")
+
+        options['sasl_mechanism'] = mechanism
+        options['sasl_plain_username'] = username
+        options['sasl_plain_password'] = password
+
+        return options
+
+    def __set_log_level(self):
+        """
+        Sets log level for kafka
+        """
+        if self._log_level == 0:
+            logging.getLogger('kafka').setLevel(logging.NOTSET)
+        elif self._log_level == 1:
+            logging.getLogger('kafka').setLevel(logging.ERROR)
+        elif self._log_level == 2:
+            logging.getLogger('kafka').setLevel(logging.WARN)
+        elif self._log_level == 3:
+            logging.getLogger('kafka').setLevel(logging.INFO)
+        elif self._log_level == 4:
+            logging.getLogger('kafka').setLevel(logging.DEBUG)
+
     def open(self, correlation_id: Optional[str]):
         """
         Opens the component.
@@ -139,53 +196,20 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         if self._connection is not None:
             return
 
-        config = self._connection_resolver.resolve(correlation_id)
         try:
 
-            options = {
-                'client_id': self._client_id,
-                'request_timeout_ms': self._request_timeout,
-
-                # retry strategy
-                # 'max_in_flight_requests_per_connection': self._max_retries,
-                'retries': self._max_retries,
-                'reconnect_backoff_max_ms': self._connect_timeout
-            }
-
-            brokers = config.get_as_string('brokers')
-            options['bootstrap_servers'] = brokers.split(',')
-
-            options['ssl_check_hostname'] = config.get_as_boolean('ssl')
-
-            username = config.get_as_string("username")
-            password = config.get_as_string("password")
-
-            mechanism = config.get_as_string_with_default("mechanism", "plain")
-
-            options['sasl_mechanism'] = mechanism
-            options['sasl_plain_username'] = username
-            options['sasl_plain_password'] = password
-
             # set log level for kafka
-            if self._log_level == 0:
-                logging.getLogger('kafka').setLevel(logging.NOTSET)
-            elif self._log_level == 1:
-                logging.getLogger('kafka').setLevel(logging.ERROR)
-            elif self._log_level == 2:
-                logging.getLogger('kafka').setLevel(logging.WARN)
-            elif self._log_level == 3:
-                logging.getLogger('kafka').setLevel(logging.INFO)
-            elif self._log_level == 4:
-                logging.getLogger('kafka').setLevel(logging.DEBUG)
+            self.__set_log_level()
 
-            self._client_config = options
+            self._client_config = self.__create_config('producer')
 
-            self._connection = KafkaProducer(**options)
+            self._connection = KafkaProducer(**self._client_config)
             assert self._connection.bootstrap_connected()
 
             self._producer = self._connection
 
-            self._logger.debug(correlation_id, f"Connected to Kafka broker at {brokers}")
+            self._logger.debug(correlation_id,
+                               f"Connected to Kafka broker at {self._client_config['bootstrap_servers']}")
 
         except Exception as err:
             self._logger.error(correlation_id, err, "Failed to connect to Kafka server")
@@ -215,7 +239,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 subscription.handler.close()
 
         self._subscriptions = []
-        self._connection.close()
+
+        if self._connection:
+            self._connection.close()
+
         self._connection = None
         self._logger.debug(correlation_id, "Disconnected from Kafka server")
 
@@ -255,7 +282,9 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         if self._admin_client is not None:
             return
 
-        self._admin_client = KafkaAdminClient()
+        options = self.__create_config('admin')
+
+        self._admin_client = KafkaAdminClient(**options)
 
     def read_queue_names(self) -> List[str]:
         """
@@ -321,22 +350,9 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._check_open()
 
         options = options or {}
-        options.update(self._options)
+        options['group_id'] = group_id or 'default'
 
-        consumer_options = {'group_id': group_id or 'default'}
-
-        if options.get('session_timeout_ms'):
-            consumer_options['session_timeout_ms'] = int(options['session_timeout_ms'])
-        if options.get('heartbeat_interval_ms'):
-            consumer_options['heartbeat_interval_ms'] = int(options['heartbeat_interval_ms'])
-        if options.get('request_timeout'):
-            consumer_options['request_timeout_ms'] = int(options['request_timeout'])
-
-        consumer_options['enable_auto_commit'] = options.get('enable_auto_commit', True)
-        consumer_options['auto_commit_interval_ms'] = options.get('auto_commit_interval_ms', 5000)
-
-        # Subscribe to topic
-        consumer = KafkaConsumer(**consumer_options)
+        consumer_options = self.__create_config('consumer', options)
 
         def handler():
             try:
@@ -347,8 +363,9 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 self._logger.error(None, err, "Error processing message in the Consumer handler")
 
         try:
+            # Subscribe to topic
+            consumer = KafkaConsumer(topic, **consumer_options)
             assert consumer.bootstrap_connected()
-            consumer.subscribe(topics=[topic])
 
             # Consume incoming messages in background
             Thread(target=handler, daemon=True).start()
