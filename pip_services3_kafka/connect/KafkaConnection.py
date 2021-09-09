@@ -5,7 +5,7 @@ import sys
 from threading import Thread
 from typing import Any, List, Optional
 
-from kafka import KafkaClient, KafkaProducer, KafkaAdminClient, KafkaConsumer, TopicPartition, OffsetAndMetadata
+from kafka import KafkaProducer, KafkaAdminClient, KafkaConsumer, TopicPartition, OffsetAndMetadata
 from pip_services3_commons.config import ConfigParams, IConfigurable
 from pip_services3_commons.errors import ConnectionException, InvalidStateException
 from pip_services3_commons.refer import IReferenceable, IReferences
@@ -166,10 +166,17 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             options['sasl_plain_username'] = username
             options['sasl_plain_password'] = password
 
-            # logging.getLogger().setLevel((self._log_level - 1) * 10)
-            # logging.getLogger('kafka.producer.kafka').setLevel((self._log_level - 1) * 10)
             # set log level for kafka
-            logging.getLogger('kafka.client').setLevel((self._log_level - 1) * 10)
+            if self._log_level == 0:
+                logging.getLogger('kafka').setLevel(logging.NOTSET)
+            elif self._log_level == 1:
+                logging.getLogger('kafka').setLevel(logging.ERROR)
+            elif self._log_level == 2:
+                logging.getLogger('kafka').setLevel(logging.WARN)
+            elif self._log_level == 3:
+                logging.getLogger('kafka').setLevel(logging.INFO)
+            elif self._log_level == 4:
+                logging.getLogger('kafka').setLevel(logging.DEBUG)
 
             self._client_config = options
 
@@ -212,13 +219,13 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._connection = None
         self._logger.debug(correlation_id, "Disconnected from Kafka server")
 
-    def get_connection(self):
+    def get_connection(self) -> Any:
         """
         Gets the connection.
         """
         return self._connection
 
-    def get_producer(self):
+    def get_producer(self) -> KafkaProducer:
         """
         Gets the Kafka message producer object
         """
