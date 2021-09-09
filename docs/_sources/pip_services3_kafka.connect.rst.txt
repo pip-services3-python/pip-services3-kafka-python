@@ -1,0 +1,21 @@
+pip\_services3\_kafka.connect package
+=====================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_kafka.connect.IKafkaMessageListener
+   pip_services3_kafka.connect.KafkaConnection
+   pip_services3_kafka.connect.KafkaConnectionResolver
+   pip_services3_kafka.connect.KafkaSubscription
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_kafka.connect
+   :members:
+   :undoc-members:
+   :show-inheritance:

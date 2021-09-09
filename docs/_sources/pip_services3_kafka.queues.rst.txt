@@ -1,0 +1,18 @@
+pip\_services3\_kafka.queues package
+====================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_kafka.queues.KafkaMessageQueue
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_kafka.queues
+   :members:
+   :undoc-members:
+   :show-inheritance:

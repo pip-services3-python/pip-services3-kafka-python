@@ -75,10 +75,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._options: ConfigParams = ConfigParams()
 
         # The Kafka connection pool object.
-        self._connection: KafkaClient = None
+        self._connection: Any = None
 
         # Kafka connection properties
-        self._client_config: Any = None
+        self._client_config: dict = None
 
         # The Kafka message producer object;
         self._producer: KafkaProducer = None
@@ -174,7 +174,6 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             self._client_config = options
 
             self._connection = KafkaProducer(**options)
-            # time.sleep(0.1)
             assert self._connection.bootstrap_connected()
 
             self._producer = self._connection
@@ -209,6 +208,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 subscription.handler.close()
 
         self._subscriptions = []
+        self._connection.close()
         self._connection = None
         self._logger.debug(correlation_id, "Disconnected from Kafka server")
 

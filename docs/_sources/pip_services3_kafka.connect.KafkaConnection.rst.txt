@@ -1,0 +1,7 @@
+pip\_services3\_kafka.connect.KafkaConnection module
+====================================================
+
+.. automodule:: pip_services3_kafka.connect.KafkaConnection
+   :members:
+   :undoc-members:
+   :show-inheritance:

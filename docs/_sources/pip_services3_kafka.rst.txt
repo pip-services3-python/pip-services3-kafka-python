@@ -1,0 +1,20 @@
+pip\_services3\_kafka package
+=============================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_kafka.build
+   pip_services3_kafka.connect
+   pip_services3_kafka.queues
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_kafka
+   :members:
+   :undoc-members:
+   :show-inheritance:

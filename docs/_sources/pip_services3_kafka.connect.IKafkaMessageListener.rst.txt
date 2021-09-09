@@ -1,0 +1,7 @@
+pip\_services3\_kafka.connect.IKafkaMessageListener module
+==========================================================
+
+.. automodule:: pip_services3_kafka.connect.IKafkaMessageListener
+   :members:
+   :undoc-members:
+   :show-inheritance:

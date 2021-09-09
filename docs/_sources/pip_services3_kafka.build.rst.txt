@@ -1,0 +1,19 @@
+pip\_services3\_kafka.build package
+===================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_kafka.build.DefaultKafkaFactory
+   pip_services3_kafka.build.KafkaMessageQueueFactory
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_kafka.build
+   :members:
+   :undoc-members:
+   :show-inheritance:
