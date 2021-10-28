@@ -1,6 +1,6 @@
 pytest
 kafka-python
 
-pip-services3-commons
-pip-services3-components
-pip-services3-messaging
+pip-services3-commons >= 3.3.9, < 4.0
+pip-services3-components >= 3.5.0, < 4.0
+pip-services3-messaging >= 3.1.0, < 4.0

@@ -16,9 +16,9 @@ class TestKafkaConnectionResolver:
 
         connection = resolver.resolve(None)
         assert 'localhost:9092' == connection.get_as_string('brokers')
-        assert connection.get_as_string("username") is None
-        assert connection.get_as_string("password") is None
-        assert connection.get_as_string("token") is None
+        assert connection.get_as_string("username") == ''
+        assert connection.get_as_string("password") == ''
+        assert connection.get_as_string("token") == ''
 
     def test_cluster_connection(self):
         resolver = KafkaConnectionResolver()
@@ -35,10 +35,10 @@ class TestKafkaConnectionResolver:
         ))
 
         connection = resolver.resolve(None)
-        assert connection.get_as_string("brokers") is not None
-        assert connection.get_as_string("username") is None
-        assert connection.get_as_string("password") is None
-        assert connection.get_as_string("token") is None
+        assert connection.get_as_string("brokers") != ''
+        assert connection.get_as_string("username") == ''
+        assert connection.get_as_string("password") == ''
+        assert connection.get_as_string("token") == ''
 
     def     test_cluster_connection_with_auth(self):
         resolver = KafkaConnectionResolver()
@@ -58,7 +58,7 @@ class TestKafkaConnectionResolver:
         ))
 
         connection = resolver.resolve(None)
-        assert connection.get_as_string("brokers") is not None
+        assert connection.get_as_string("brokers") != ''
         assert connection.get_as_string("username") == 'test'
         assert connection.get_as_string("password") == 'pass123'
         assert connection.get_as_string("mechanism") == 'plain'
@@ -69,7 +69,7 @@ class TestKafkaConnectionResolver:
             "connection.uri", "tcp://test:pass123@server1:9092,server2:9092,server3:9092?param=234",
         ))
         connection = resolver.resolve(None)
-        assert connection.get_as_string("brokers") is not None
+        assert connection.get_as_string("brokers") != ''
         assert connection.get_as_string("username") == 'test'
         assert connection.get_as_string("password") == 'pass123'
-        assert connection.get_as_string("mechanism") is None
+        assert connection.get_as_string("mechanism") == ''

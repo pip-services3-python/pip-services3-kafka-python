@@ -150,7 +150,7 @@ class KafkaConnectionResolver(IReferenceable, IConfigurable):
                 continue
 
             uri = connection.get_uri()
-            if uri is not None:
+            if uri:
                 global_uri = uri
                 continue
 
