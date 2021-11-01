@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+
 import logging
 import socket
 import sys
 from threading import Thread
 from typing import Any, List, Optional
 
-from kafka import KafkaProducer, KafkaAdminClient, KafkaConsumer, TopicPartition, OffsetAndMetadata
+from confluent_kafka import Producer, Consumer, TopicPartition, KafkaError
+from confluent_kafka.admin import AdminClient
 from pip_services3_commons.config import ConfigParams, IConfigurable
 from pip_services3_commons.errors import ConnectionException, InvalidStateException
 from pip_services3_commons.refer import IReferenceable, IReferences
@@ -75,16 +77,16 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._options: ConfigParams = ConfigParams()
 
         # The Kafka connection pool object.
-        self._connection: Any = None
+        self._connection: Producer = None
 
         # Kafka connection properties
-        self._client_config: dict = None
+        self._client_config: dict = {}
 
         # The Kafka message producer object;
-        self._producer: KafkaProducer = None
+        self._producer: Optional[Producer] = None
 
         # The Kafka admin client object;
-        self._admin_client: KafkaAdminClient = None
+        self._admin_client: Optional[AdminClient] = None
 
         # Topic subscriptions
         self._subscriptions: List[KafkaSubscription] = []
@@ -142,33 +144,38 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         brokers = config.get_as_string('brokers')
         options = options or {}
 
-        options.update({'client_id': self._client_id,
-                        'request_timeout_ms': self._request_timeout,
-
-                        'reconnect_backoff_max_ms': self._connect_timeout,
-                        'bootstrap_servers': brokers.split(','),
-                        'ssl_check_hostname': config.get_as_boolean('ssl')
+        options.update({'reconnect.backoff.max.ms': self._connect_timeout,
+                        'bootstrap.servers': brokers,
+                        # 'ssl_check_hostname': config.get_as_boolean('ssl')
                         })
 
-        if kind == 'producer':
+        if kind in ['producer', 'admin']:
             options['retries'] = self._max_retries
+            options['request.timeout.ms'] = self._request_timeout
 
         if kind == 'consumer':
-            if options.get('session_timeout_ms'):
-                options['session_timeout_ms'] = int(options['session_timeout_ms'])
-            if options.get('heartbeat_interval_ms'):
-                options['heartbeat_interval_ms'] = int(options['heartbeat_interval_ms'])
+            options['group.id'] = options.get('group.id', self._client_id)
+            # options['queued.max.messages.kbytes'] = 2000000
+            options['session.timeout.ms'] = int(options.get('session.timeout.ms', 10000))
+            options['default.topic.config'] = {'auto.offset.reset': 'smallest'}
 
-            options['enable_auto_commit'] = options.get('enable_auto_commit', True)
-            options['auto_commit_interval_ms'] = options.get('auto_commit_interval_ms', 5000)
+            if options.get('heartbeat.interval.ms'):
+                options['heartbeat.interval.ms'] = int(options['heartbeat.interval.ms'], 10000)
+
+            options['enable.auto.commit'] = options.get('enable.auto.commit', True)
+            options['auto.commit.interval.ms'] = options.get('auto.commit.interval.ms', 5000)
 
         username = config.get_as_string("username")
         password = config.get_as_string("password")
         mechanism = config.get_as_string_with_default("mechanism", "plain")
 
-        options['sasl_mechanism'] = mechanism
-        options['sasl_plain_username'] = username
-        options['sasl_plain_password'] = password
+        options['security.protocol'] = 'PLAINTEXT'
+
+        if username and password:
+            options['sasl.mechanism'] = mechanism.upper()
+            options['security.protocol'] = 'SASL_SSL' if config.get_as_boolean('ssl') else 'SASL_PLAINTEXT'
+            options['sasl.username'] = username
+            options['sasl.password'] = password
 
         return options
 
@@ -203,13 +210,11 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
             self._client_config = self.__create_config('producer')
 
-            self._connection = KafkaProducer(**self._client_config)
-            assert self._connection.bootstrap_connected()
-
+            self._connection = Producer(self._client_config)
             self._producer = self._connection
 
             self._logger.debug(correlation_id,
-                               f"Connected to Kafka broker at {self._client_config['bootstrap_servers']}")
+                               f"Connected to Kafka broker at {self._client_config['bootstrap.servers']}")
 
         except Exception as err:
             self._logger.error(correlation_id, err, "Failed to connect to Kafka server")
@@ -230,7 +235,6 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         # Disconnect producer
         if self._admin_client is not None:
-            self._admin_client.close()
             self._admin_client = None
 
         # Disconnect consumers
@@ -239,9 +243,6 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 subscription.handler.close()
 
         self._subscriptions = []
-
-        if self._connection:
-            self._connection.close()
 
         self._connection = None
         self._logger.debug(correlation_id, "Disconnected from Kafka server")
@@ -252,7 +253,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         """
         return self._connection
 
-    def get_producer(self) -> KafkaProducer:
+    def get_producer(self) -> Producer:
         """
         Gets the Kafka message producer object
         """
@@ -284,7 +285,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         options = self.__create_config('admin')
 
-        self._admin_client = KafkaAdminClient(**options)
+        self._admin_client = AdminClient(options)
 
     def read_queue_names(self) -> List[str]:
         """
@@ -294,7 +295,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         """
         self._connect_to_admin()
 
-        return self._admin_client.list_topics()
+        return list(self._admin_client.list_topics().topics.keys())
 
     def create_queue(self, name: str):
         """
@@ -327,15 +328,20 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         options = options or {}
 
-        if options.get('acks'):
-            self._producer.config['acks'] = options['acks']
         if options.get('compression'):
-            self._producer.config['compression_type'] = options['compression']
+            options['compression.type'] = options.pop('compression')
         if options.get('timeout'):
-            self._producer.config['max_block_ms'] = options['timeout']
+            options['message.timeout.ms'] = options.pop('timeout')
+
+        # Reconfigure Producer
+        if options != {}:
+            self._client_config.update(options)
+            self._connection = Producer(self._client_config)
+            self._producer = self._connection
 
         for message in messages:
-            self._producer.send(topic=topic, value=message)
+            self._producer.produce(topic=topic, value=message)
+            # self._producer.flush(1)
 
     def subscribe(self, topic: str, group_id: str, options: dict, listener: IKafkaMessageListener):
         """
@@ -350,22 +356,30 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._check_open()
 
         options = options or {}
-        options['group_id'] = group_id or 'default'
+        options['group.id'] = group_id or 'default'
 
         consumer_options = self.__create_config('consumer', options)
 
-        def handler():
-            try:
-                for m in consumer:
-                    listener.on_message(m.topic, m.partition, m.value)
-            except Exception as err:
-                sys.stderr.write(f'Error processing message in the Consumer handler: {err}')
-                self._logger.error(None, err, "Error processing message in the Consumer handler")
-
         try:
             # Subscribe to topic
-            consumer = KafkaConsumer(topic, **consumer_options)
-            assert consumer.bootstrap_connected()
+            consumer = Consumer(consumer_options)
+            consumer.subscribe([topic])
+
+            def handler():
+                running = True
+                try:
+                    while running:
+                        msg = consumer.poll()
+                        if not msg.error():
+                            listener.on_message(msg.topic(), msg.partition(), msg.value())
+                        elif msg.error().code() != KafkaError._PARTITION_EOF:
+                            sys.stderr.write(f'Error consume message: {msg.error()}')
+                            running = False
+                except Exception as err:
+                    sys.stderr.write(f'Error processing message in the Consumer handler: {err}')
+                    self._logger.error(None, err, "Error processing message in the Consumer handler")
+                finally:
+                    consumer.close()
 
             # Consume incoming messages in background
             Thread(target=handler, daemon=True).start()
@@ -432,9 +446,8 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             return
 
         # Commit the offset
-        subscription.handler.commit([{
-            TopicPartition(topic=topic, partition=partition): OffsetAndMetadata(offset=offset, metadata='')
-        }])
+        subscription.handler.commit(offsets=[TopicPartition(topic=topic, partition=partition, offset=offset)],
+                                    asynchronous=True)
 
     def seek(self, topic: str, group_id: str, partition: int, offset: int, listener: IKafkaMessageListener):
         """
@@ -460,7 +473,4 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             return
 
         # Seek the offset
-        subscription.handler.seek(
-            partition=TopicPartition(topic=topic, partition=partition),
-            offset=offset
-        )
+        subscription.handler.seek(TopicPartition(topic=topic, partition=partition, offset=offset))

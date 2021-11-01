@@ -1,5 +1,5 @@
 pytest
-kafka-python
+confluent_kafka
 
 pip-services3-commons >= 3.3.9, < 4.0
 pip-services3-components >= 3.5.0, < 4.0

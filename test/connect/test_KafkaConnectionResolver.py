@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from pip_services3_commons.config import ConfigParams
 
 from pip_services3_kafka.connect.KafkaConnectionResolver import KafkaConnectionResolver
@@ -40,7 +41,7 @@ class TestKafkaConnectionResolver:
         assert connection.get_as_string("password") == ''
         assert connection.get_as_string("token") == ''
 
-    def     test_cluster_connection_with_auth(self):
+    def test_cluster_connection_with_auth(self):
         resolver = KafkaConnectionResolver()
         resolver.configure(ConfigParams.from_tuples(
             "connections.0.protocol", "tcp",

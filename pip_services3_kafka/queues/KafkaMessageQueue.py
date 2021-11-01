@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import datetime
 import json
 import time
@@ -266,7 +267,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         options = {
             # 'fromBeginning': self._fromBeginning,
-            'enable_auto_commit': self._auto_commit,
+            'enable.auto.commit': self._auto_commit,
             # 'partitionsConsumedConcurrently': self._read_partitions
         }
 
@@ -303,7 +304,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         message = MessageEnvelope(correlation_id, message_type, None)
         message.message_id = msg['key']
-        message.sent_time = datetime.datetime.fromtimestamp((msg['timestamp']))
+        message.sent_time = datetime.datetime.fromtimestamp(msg['timestamp'])
         message.set_message_as_string(msg['value'])
         message.set_reference(msg)
 

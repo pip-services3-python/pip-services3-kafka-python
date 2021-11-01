@@ -108,7 +108,10 @@ class MessageQueueFixture:
         envelope1 = MessageEnvelope("123", "Test", "Test message")
         self._queue.send(None, envelope1)
 
-        time.sleep(1)
+        # await message
+        for i in range(5):
+            if len(message_receiver.messages) == 0:
+                time.sleep(0.5)
 
         envelope2 = message_receiver.messages[0]
         assert envelope2 is not None
@@ -117,3 +120,4 @@ class MessageQueueFixture:
         assert envelope1.correlation_id == envelope2.correlation_id
 
         self._queue.end_listen(None)
+

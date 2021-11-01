@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+
 from typing import Any
 
-from kafka import KafkaConsumer
+from confluent_kafka import Consumer
 
 from pip_services3_kafka.connect.IKafkaMessageListener import IKafkaMessageListener
 
@@ -10,7 +11,8 @@ class KafkaSubscription:
     """
     The KafkaSubscription class defines fields for Kafka subscriptions
     """
-    def __init__(self, topic: str = None, group_id: str = None, options: Any = None, handler: KafkaConsumer = None,
+
+    def __init__(self, topic: str = None, group_id: str = None, options: Any = None, handler: Consumer = None,
                  listener: IKafkaMessageListener = None):
         """
         Creates new instance
@@ -24,5 +26,5 @@ class KafkaSubscription:
         self.topic = topic
         self.group_id = group_id
         self.options = options
-        self.handler: KafkaConsumer = handler
+        self.handler: Consumer = handler
         self.listener = listener
