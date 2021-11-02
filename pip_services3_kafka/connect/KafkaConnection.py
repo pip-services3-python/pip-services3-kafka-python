@@ -3,6 +3,7 @@ import datetime
 import logging
 import socket
 import sys
+import threading
 from threading import Thread
 from typing import Any, List, Optional
 
@@ -98,6 +99,8 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._retry_timeout: int = 30000
         self._request_timeout: int = 30000
 
+        self.__stop_events: List[threading.Event] = []
+
     def configure(self, config: ConfigParams):
         """
         Configures component by passing configuration parameters.
@@ -158,7 +161,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             # options['queued.max.messages.kbytes'] = 2000000
             options['session.timeout.ms'] = int(options.get('session.timeout.ms', 10000))
 
-            if options.get('from_beginning'):
+            if options.pop('from_beginning'):
                 options['default.topic.config'] = {'auto.offset.reset': 'beginning'}
             else:
                 options['default.topic.config'] = {'auto.offset.reset': 'smallest'}
@@ -242,10 +245,12 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             self._admin_client = None
 
         # Disconnect consumers
-        for subscription in self._subscriptions:
-            if subscription.handler:
-                subscription.handler.close()
+        for index in range(len(self._subscriptions)):
+            self.__stop_events[index].clear()
+            if self._subscriptions[index].handler:
+                self._subscriptions[index].handler.close()
 
+        self.__stop_events = []
         self._subscriptions = []
 
         self._connection = None
@@ -370,22 +375,16 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             consumer.subscribe([topic])
 
             def handler():
-                running = True
                 try:
-                    while running:
-                        if not list(
-                                filter(
-                                    lambda sub: sub.topic == topic and sub.group_id == group_id and sub.listener == listener,
-                                    self._subscriptions)):
-                            running = False
-                        msg = consumer.poll(1.0)
+                    while event.is_set():
+                        msg = consumer.poll()
                         if msg is None:
                             continue
                         if not msg.error():
                             listener.on_message(msg.topic(), msg.partition(), msg.value())
                         elif msg.error().code() != KafkaError._PARTITION_EOF:
                             sys.stderr.write(f'Error consume message: {msg.error()}')
-                            running = False
+                            event.clear()
                 except Exception as err:
                     sys.stderr.write(f'Error processing message in the Consumer handler: {err}')
                     self._logger.error(None, err, "Error processing message in the Consumer handler")
@@ -393,6 +392,8 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                     consumer.close()
 
             # Consume incoming messages in background
+            event = threading.Event()
+            event.set()
             Thread(target=handler, daemon=True).start()
 
             # Add the subscription
@@ -403,6 +404,9 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 handler=consumer,
                 listener=listener
             )
+
+            self.__stop_events.append(event)
+
             self._subscriptions.append(subscription)
         except Exception as err:
             self._logger.error(None, err, "Failed to connect Kafka consumer.")
@@ -428,6 +432,9 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         # Remove the subscription
         subscription = self._subscriptions[index]
 
+        self.__stop_events[index].clear()
+
+        del self.__stop_events[index]
         del self._subscriptions[index]
 
         if self.is_open() and subscription.handler is not None:
