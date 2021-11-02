@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import datetime
 import logging
 import socket
 import sys
@@ -157,7 +157,11 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             options['group.id'] = options.get('group.id', self._client_id)
             # options['queued.max.messages.kbytes'] = 2000000
             options['session.timeout.ms'] = int(options.get('session.timeout.ms', 10000))
-            options['default.topic.config'] = {'auto.offset.reset': 'smallest'}
+
+            if options.get('from_beginning'):
+                options['default.topic.config'] = {'auto.offset.reset': 'beginning'}
+            else:
+                options['default.topic.config'] = {'auto.offset.reset': 'smallest'}
 
             if options.get('heartbeat.interval.ms'):
                 options['heartbeat.interval.ms'] = int(options['heartbeat.interval.ms'], 10000)
@@ -369,7 +373,14 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 running = True
                 try:
                     while running:
-                        msg = consumer.poll()
+                        if not list(
+                                filter(
+                                    lambda sub: sub.topic == topic and sub.group_id == group_id and sub.listener == listener,
+                                    self._subscriptions)):
+                            running = False
+                        msg = consumer.poll(1.0)
+                        if msg is None:
+                            continue
                         if not msg.error():
                             listener.on_message(msg.topic(), msg.partition(), msg.value())
                         elif msg.error().code() != KafkaError._PARTITION_EOF:

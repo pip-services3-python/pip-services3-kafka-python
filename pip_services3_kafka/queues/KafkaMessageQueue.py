@@ -119,7 +119,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         self._topic: str = ''
         self._group_id: str = ''
-        # self._from_beginning: bool = False
+        self._from_beginning: bool = False
         self._auto_commit: bool = True
         self._read_partitions: int = 1
         self._acks: int = -1
@@ -141,7 +141,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         self._topic = config.get_as_string_with_default("topic", self._topic)
         self._group_id = config.get_as_string_with_default("group_id", self._group_id)
-        # self._fromBeginning = config.getAsBooleanWithDefault("from_beginning", self._fromBeginning)
+        self._from_beginning = config.get_as_boolean_with_default("from_beginning", self._from_beginning)
         self._read_partitions = config.get_as_integer_with_default("read_partitions", self._read_partitions)
         self._auto_commit = config.get_as_boolean_with_default("autocommit", self._auto_commit)
         self._auto_subscribe = config.get_as_boolean_with_default("options.autosubscribe", self._auto_subscribe)
@@ -266,7 +266,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
         topic = self._get_topic()
 
         options = {
-            # 'fromBeginning': self._fromBeginning,
+            'from_beginning': 'beginning' if self._from_beginning else  None,
             'enable.auto.commit': self._auto_commit,
             # 'partitionsConsumedConcurrently': self._read_partitions
         }
