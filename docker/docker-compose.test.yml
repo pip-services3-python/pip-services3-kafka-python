@@ -21,10 +21,10 @@ services:
       - ZOO_MY_ID=1
       - ZOO_PORT=2181
       - ZOOKEEPER_SERVERS=server.1=zookeeper:2888:3888
-      - ZOOKEEPER_SASL_ENABLED="false"
+      - ZOOKEEPER_SASL_ENABLED=false
 
   kafka:
-    image: confluentinc/cp-kafka:5.1.0
+    image: confluentinc/cp-kafka:latest
     volumes:
       - './kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf'
     environment:

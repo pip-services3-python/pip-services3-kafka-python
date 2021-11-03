@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import datetime
+
 import logging
 import socket
 import sys
 import threading
+import time
 from threading import Thread
 from typing import Any, List, Optional
 
@@ -143,6 +144,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         :param options: additional config
         :return: dict with config
         """
+        # TODO maybe need add another configs
         config = self._connection_resolver.resolve(None)
         brokers = config.get_as_string('brokers')
         options = options or {}
@@ -247,8 +249,11 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         # Disconnect consumers
         for index in range(len(self._subscriptions)):
             self.__stop_events[index].clear()
-            if self._subscriptions[index].handler:
-                self._subscriptions[index].handler.close()
+            # if self._subscriptions[index].handler:
+            #     self._subscriptions[index].handler.close()
+
+        # Timeout for closing consumers by event
+        time.sleep(1)
 
         self.__stop_events = []
         self._subscriptions = []
@@ -350,7 +355,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         for message in messages:
             self._producer.produce(topic=topic, value=message)
-            # self._producer.flush(1)
+            # self._producer.poll()
 
     def subscribe(self, topic: str, group_id: str, options: dict, listener: IKafkaMessageListener):
         """
@@ -374,27 +379,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             consumer = Consumer(consumer_options)
             consumer.subscribe([topic])
 
-            def handler():
-                try:
-                    while event.is_set():
-                        msg = consumer.poll()
-                        if msg is None:
-                            continue
-                        if not msg.error():
-                            listener.on_message(msg.topic(), msg.partition(), msg.value())
-                        elif msg.error().code() != KafkaError._PARTITION_EOF:
-                            sys.stderr.write(f'Error consume message: {msg.error()}')
-                            event.clear()
-                except Exception as err:
-                    sys.stderr.write(f'Error processing message in the Consumer handler: {err}')
-                    self._logger.error(None, err, "Error processing message in the Consumer handler")
-                finally:
-                    consumer.close()
-
             # Consume incoming messages in background
             event = threading.Event()
             event.set()
-            Thread(target=handler, daemon=True).start()
+            Thread(target=self.__handler, args=(consumer, listener, event), daemon=True).start()
 
             # Add the subscription
             subscription = KafkaSubscription(
@@ -406,11 +394,28 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             )
 
             self.__stop_events.append(event)
-
             self._subscriptions.append(subscription)
         except Exception as err:
             self._logger.error(None, err, "Failed to connect Kafka consumer.")
             raise err
+
+    def __handler(self, consumer: Consumer, listener: IKafkaMessageListener, event: threading.Event):
+        """Consume messages in thread"""
+        try:
+            while event.is_set():
+                msg = consumer.poll(1)
+                if msg is None:
+                    continue
+                if not msg.error():
+                    listener.on_message(msg.topic(), msg.partition(), msg.value())
+                elif msg.error().code() != KafkaError._PARTITION_EOF:
+                    sys.stderr.write(f'Error consume message: {msg.error()}')
+                    event.clear()
+        except Exception as err:
+            sys.stderr.write(f'Error processing message in the Consumer handler: {err}')
+            self._logger.error(None, err, "Error processing message in the Consumer handler")
+        finally:
+            consumer.close()
 
     def unsubscribe(self, topic: str, group_id: str, listener: IKafkaMessageListener):
         """
@@ -431,14 +436,15 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         # Remove the subscription
         subscription = self._subscriptions[index]
-
-        self.__stop_events[index].clear()
+        # Stop event for thread with consumer
+        stop_event = self.__stop_events[index]
 
         del self.__stop_events[index]
         del self._subscriptions[index]
 
         if self.is_open() and subscription.handler is not None:
-            subscription.handler.close()
+            # subscription.handler.close()
+            stop_event.clear()
 
     def commit(self, topic: str, group_id: str, partition: int, offset: int, listener: IKafkaMessageListener):
         """

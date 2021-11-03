@@ -4,6 +4,7 @@
 
 ### Features
 * Migrated from kafka-python on confluent_kafka
+* Changed seconds on millisecond in timestamps
 
 ## <a name="3.0.0"></a> 3.0.0 (2021-09-09)
 

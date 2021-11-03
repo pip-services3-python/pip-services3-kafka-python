@@ -266,7 +266,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
         topic = self._get_topic()
 
         options = {
-            'from_beginning': 'beginning' if self._from_beginning else  None,
+            'from_beginning': 'beginning' if self._from_beginning else None,
             'enable.auto.commit': self._auto_commit,
             # 'partitionsConsumedConcurrently': self._read_partitions
         }
@@ -288,7 +288,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
             'key': message.message_id,
             'value': message.get_message_as_string(),
             'headers': headers,
-            'timestamp': datetime.datetime.now().timestamp()
+            'timestamp': int(datetime.datetime.now().timestamp() * 1000)
         }
 
         return json.dumps(msg).encode('utf-8')
@@ -304,7 +304,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         message = MessageEnvelope(correlation_id, message_type, None)
         message.message_id = msg['key']
-        message.sent_time = datetime.datetime.fromtimestamp(msg['timestamp'])
+        message.sent_time = datetime.datetime.fromtimestamp(int(msg['timestamp']) / 1000)
         message.set_message_as_string(msg['value'])
         message.set_reference(msg)
 
