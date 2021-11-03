@@ -355,7 +355,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         for message in messages:
             self._producer.produce(topic=topic, value=message)
-            # self._producer.poll()
+            self._producer.flush(5)
 
     def subscribe(self, topic: str, group_id: str, options: dict, listener: IKafkaMessageListener):
         """
