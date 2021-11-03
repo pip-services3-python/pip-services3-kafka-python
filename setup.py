@@ -12,8 +12,8 @@ Links
 
 """
 
-from setuptools import setup
 from setuptools import find_packages
+from setuptools import setup
 
 try:
     readme = open('readme.md').read()
@@ -22,7 +22,7 @@ except:
 
 setup(
     name='pip_services3_kafka',
-    version='3.1.1',
+    version='3.1.2',
     url='http://github.com/pip-services3-python/pip-services3-kafka-python',
     license='MIT',
     author='Conceptual Vision Consulting LLC',
@@ -35,10 +35,11 @@ setup(
     zip_safe=True,
     platforms='any',
     install_requires=[
-        'pip-services3-commons',
-        'pip-services3-components',
-        'pip-services3-messaging',
-        'kafka-python'
+        'confluent_kafka',
+
+        'pip-services3-commons >= 3.3.9, < 4.0',
+        'pip-services3-components >= 3.5.0, < 4.0',
+        'pip-services3-messaging >= 3.1.0, < 4.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
