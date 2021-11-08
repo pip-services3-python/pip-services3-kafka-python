@@ -75,9 +75,9 @@ class MessageQueueFixture:
         self._queue.send(None, envelope1)
 
         # Delay until the message is received
-        time.sleep(0.5)
+        time.sleep(2)
 
-        envelope2 = self._queue.receive(None, 10000)
+        envelope2 = self._queue.peek(None)
         assert envelope2 is not None
         assert envelope1.message_type == envelope2.message_type
         assert envelope1.message.decode('utf-8') == envelope2.message.decode('utf-8')

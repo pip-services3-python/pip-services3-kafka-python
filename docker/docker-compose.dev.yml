@@ -13,7 +13,7 @@ services:
       - ZOOKEEPER_SASL_ENABLED=false
 
   kafka:
-    image: confluentinc/cp-kafka:5.1.0
+    image: confluentinc/cp-kafka:latest
     ports:
       - 9092:9092
     environment:
