@@ -10,6 +10,7 @@ from typing import Any, List, Optional
 
 from confluent_kafka import Producer, Consumer, TopicPartition, KafkaError
 from confluent_kafka.admin import AdminClient
+from confluent_kafka.cimpl import NewTopic
 from pip_services3_commons.config import ConfigParams, IConfigurable
 from pip_services3_commons.errors import ConnectionException, InvalidStateException
 from pip_services3_commons.refer import IReferenceable, IReferences
@@ -318,7 +319,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         :param name: the name of the queue to be created.
         """
-        # Todo: complete implementation
+        self._check_open()
+        self._connect_to_admin()
+
+        self._admin_client.create_topics([NewTopic(topic=name, num_partitions=1, replication_factor=1)])
 
     def delete_queue(self, name: str):
         """
@@ -327,7 +331,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         :param name: the name of the queue to be deleted.
         """
-        # Todo: complete implementation
+        self._check_open()
+        self._connect_to_admin()
+
+        self._admin_client.delete_topics([name])
 
     def publish(self, topic: str, messages: List[Any], options: dict):
         """

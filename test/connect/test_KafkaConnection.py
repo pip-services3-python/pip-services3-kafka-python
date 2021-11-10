@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import time
 
 import pytest
 from pip_services3_commons.config import ConfigParams
@@ -52,3 +53,25 @@ class TestKafkaConnection:
         self.connection.close(None)
         assert self.connection.is_open() is False
         assert self.connection.get_connection() is None
+
+    def test_create_delete_topics(self):
+        topics = ['new_topic1', 'new_topic2']
+        self.connection.open(None)
+
+        self.connection.create_queue(topics[0])
+        self.connection.create_queue(topics[1])
+        time.sleep(0.5)
+
+        kafka_topics = self.connection.read_queue_names()
+
+        assert topics[0] in kafka_topics
+        assert topics[1] in kafka_topics
+
+        self.connection.delete_queue(topics[0])
+        self.connection.delete_queue(topics[1])
+        time.sleep(0.5)
+
+        kafka_topics = self.connection.read_queue_names()
+
+        assert topics[0] not in kafka_topics
+        assert topics[1] not in kafka_topics
