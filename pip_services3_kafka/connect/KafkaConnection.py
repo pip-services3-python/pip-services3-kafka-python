@@ -164,7 +164,8 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             # options['queued.max.messages.kbytes'] = 2000000
             options['session.timeout.ms'] = int(options.get('session.timeout.ms', 10000))
 
-            if options.pop('from_beginning'):
+            if 'from_beginning' in options.keys():
+                options.pop('from_beginning')
                 options['default.topic.config'] = {'auto.offset.reset': 'beginning'}
             else:
                 options['default.topic.config'] = {'auto.offset.reset': 'smallest'}
