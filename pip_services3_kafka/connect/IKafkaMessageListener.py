@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from confluent_kafka import Message
 
 
 class IKafkaMessageListener(ABC):
@@ -10,7 +11,7 @@ class IKafkaMessageListener(ABC):
     """
 
     @abstractmethod
-    def on_message(self, topic: str, partition: int, message: Any):
+    def on_message(self, topic: str, partition: int, message: Message):
         """
         Defines the actions to be done after a message is received.
 

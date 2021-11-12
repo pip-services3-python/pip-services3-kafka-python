@@ -80,8 +80,89 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pip-services3-kafka-connect-kafkaconnectionresolver-module">
-<h1>pip_services3_kafka.connect.KafkaConnectionResolver module<a class="headerlink" href="#pip-services3-kafka-connect-kafkaconnectionresolver-module" title="Permalink to this headline"></a></h1>
+  <section id="module-pip_services3_kafka.connect.KafkaConnectionResolver">
+<span id="pip-services3-kafka-connect-kafkaconnectionresolver-module"></span><h1>pip_services3_kafka.connect.KafkaConnectionResolver module<a class="headerlink" href="#module-pip_services3_kafka.connect.KafkaConnectionResolver" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pip_services3_kafka.connect.KafkaConnectionResolver.</span></span><span class="sig-name descname"><span class="pre">KafkaConnectionResolver</span></span><a class="headerlink" href="#pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pip_services3_commons.refer.IReferenceable.IReferenceable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pip_services3_commons.config.IConfigurable.IConfigurable</span></code></p>
+<p>Helper class that resolves Kafka connection and credential parameters,
+validates them and generates connection options.</p>
+<dl class="simple">
+<dt>### Configuration parameters ###</dt><dd><ul class="simple">
+<li><p>connection(s):
+- discovery_key:               (optional) a key to retrieve the connection from <code class="xref py py-class docutils literal notranslate"><span class="pre">IDiscovery</span></code>
+- host:                        host name or IP address
+- port:                        port number
+- uri:                         resource URI or connection string with all parameters in it</p></li>
+<li><p>credential(s):
+- store_key:                   (optional) a key to retrieve the credentials from <code class="xref py py-class docutils literal notranslate"><span class="pre">ICredentialStore</span></code>
+- username:                    user name
+- password:                    user password</p></li>
+</ul>
+</dd>
+<dt>### References ###</dt><dd><ul class="simple">
+<li><p><cite>*:discovery:*:*:1.0</cite>      (optional) <code class="xref py py-class docutils literal notranslate"><span class="pre">IDiscovery</span></code> services to resolve connection</p></li>
+<li><p><cite>*:credential-store:*:*:1.0</cite>         (optional) Credential stores to resolve credentials</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.compose">
+<span class="sig-name descname"><span class="pre">compose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pip_services3_components.connect.ConnectionParams.ConnectionParams</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credential</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_components.auth.CredentialParams.CredentialParams</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.compose" title="Permalink to this definition"></a></dt>
+<dd><p>Composes Kafka connection options from connection and credential parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p></li>
+<li><p><strong>connections</strong> – connection parameters</p></li>
+<li><p><strong>credential</strong> – credential parameters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>resolved Kafka connection options.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.configure">
+<span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_commons.config.ConfigParams.ConfigParams</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.configure" title="Permalink to this definition"></a></dt>
+<dd><p>Configures component by passing configuration parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config</strong> – configuration parameters to be set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pip_services3_commons.config.ConfigParams.ConfigParams</span></span></span><a class="headerlink" href="#pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.resolve" title="Permalink to this definition"></a></dt>
+<dd><p>Resolves Kafka connection options from connection and credential parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>resolved Kafka connection options.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.set_references">
+<span class="sig-name descname"><span class="pre">set_references</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_commons.refer.IReferences.IReferences</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.connect.KafkaConnectionResolver.KafkaConnectionResolver.set_references" title="Permalink to this definition"></a></dt>
+<dd><p>Sets references to dependent components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>references</strong> – references to locate the component dependencies.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

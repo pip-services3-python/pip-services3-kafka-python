@@ -415,7 +415,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 if msg is None:
                     continue
                 if not msg.error():
-                    listener.on_message(msg.topic(), msg.partition(), msg.value())
+                    listener.on_message(msg.topic(), msg.partition(), msg)
                 elif msg.error().code() != KafkaError._PARTITION_EOF:
                     sys.stderr.write(f'Error consume message: {msg.error()}')
                     event.clear()

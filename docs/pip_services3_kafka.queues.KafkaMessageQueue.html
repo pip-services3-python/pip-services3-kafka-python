@@ -79,8 +79,313 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pip-services3-kafka-queues-kafkamessagequeue-module">
-<h1>pip_services3_kafka.queues.KafkaMessageQueue module<a class="headerlink" href="#pip-services3-kafka-queues-kafkamessagequeue-module" title="Permalink to this headline"></a></h1>
+  <section id="module-pip_services3_kafka.queues.KafkaMessageQueue">
+<span id="pip-services3-kafka-queues-kafkamessagequeue-module"></span><h1>pip_services3_kafka.queues.KafkaMessageQueue module<a class="headerlink" href="#module-pip_services3_kafka.queues.KafkaMessageQueue" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pip_services3_kafka.queues.KafkaMessageQueue.</span></span><span class="sig-name descname"><span class="pre">KafkaMessageQueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pip_services3_messaging.queues.MessageQueue.MessageQueue</span></code>, <a class="reference internal" href="pip_services3_kafka.connect.IKafkaMessageListener.html#pip_services3_kafka.connect.IKafkaMessageListener.IKafkaMessageListener" title="pip_services3_kafka.connect.IKafkaMessageListener.IKafkaMessageListener"><code class="xref py py-class docutils literal notranslate"><span class="pre">pip_services3_kafka.connect.IKafkaMessageListener.IKafkaMessageListener</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pip_services3_commons.refer.IUnreferenceable.IUnreferenceable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pip_services3_commons.run.IOpenable.IOpenable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pip_services3_commons.run.ICleanable.ICleanable</span></code></p>
+<p>Message queue that sends and receives messages via Kafka message broker.</p>
+<p>Kafka is a popular light-weight protocol to communicate IoT devices.</p>
+<dl class="simple">
+<dt>### Configuration parameters ###</dt><dd><ul class="simple">
+<li><p>topic:                         name of Kafka topic to subscribe</p></li>
+<li><p>group_id:                      (optional) consumer group id (default: default)</p></li>
+<li><p>from_beginning:                (optional) restarts receiving messages from the beginning (default: false)</p></li>
+<li><p>read_partitions:               (optional) number of partitions to be consumed concurrently (default: 1)</p></li>
+<li><p>autocommit:                    (optional) turns on/off autocommit (default: true)</p></li>
+<li><p>connection(s):
+- discovery_key:               (optional) a key to retrieve the connection from <code class="xref py py-class docutils literal notranslate"><span class="pre">IDiscovery</span></code>
+- host:                        host name or IP address
+- port:                        port number
+- uri:                         resource URI or connection string with all parameters in it</p></li>
+<li><p>credential(s):
+- store_key:                   (optional) a key to retrieve the credentials from <code class="xref py py-class docutils literal notranslate"><span class="pre">ICredentialStore</span></code>
+- username:                    user name
+- password:                    user password</p></li>
+<li><p>options:
+- autosubscribe:        (optional) true to automatically subscribe on option (default: false)
+- acks                  (optional) control the number of required acks: -1 - all, 0 - none, 1 - only leader (default: -1)
+- log_level:            (optional) log level 0 - None, 1 - Error, 2 - Warn, 3 - Info, 4 - Debug (default: 1)
+- connect_timeout:      (optional) number of milliseconds to connect to broker (default: 1000)
+- max_retries:          (optional) maximum retry attempts (default: 5)
+- retry_timeout:        (optional) number of milliseconds to wait on each reconnection attempt (default: 30000)
+- request_timeout:      (optional) number of milliseconds to wait on flushing messages (default: 30000)</p></li>
+</ul>
+</dd>
+<dt>### References ###</dt><dd><ul class="simple">
+<li><p><cite>*:logger:*:*:1.0</cite>            (optional) <code class="xref py py-class docutils literal notranslate"><span class="pre">ILogger</span></code> components to pass log messages</p></li>
+<li><p><cite>*:counters:*:*:1.0</cite>          (optional) <code class="xref py py-class docutils literal notranslate"><span class="pre">ICounters</span></code> components to pass collected measurements</p></li>
+<li><p><cite>*:discovery:*:*:1.0</cite>         (optional) <code class="xref py py-class docutils literal notranslate"><span class="pre">IDiscovery</span></code> services to resolve connection</p></li>
+<li><p><cite>*:credential-store:*:*:1.0</cite>  (optional) Credential stores to resolve credentials</p></li>
+<li><p><cite>*:connection:kafka:*:1.0</cite>    (optional) Shared connection to Kafka service</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">queue</span> <span class="o">=</span> <span class="n">KafkaMessageQueue</span><span class="p">(</span><span class="s2">&quot;myqueue&quot;</span><span class="p">)</span>
+<span class="n">queue</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">ConfigParams</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+    <span class="s2">&quot;topic&quot;</span><span class="p">,</span> <span class="s2">&quot;mytopic&quot;</span><span class="p">,</span>
+    <span class="s1">&#39;connection.protocol&#39;</span><span class="p">,</span> <span class="s1">&#39;tcp&#39;</span><span class="p">,</span>
+    <span class="s2">&quot;connection.host&quot;</span><span class="p">,</span> <span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;connection.port&quot;</span><span class="p">,</span> <span class="mi">9092</span><span class="p">,</span>
+<span class="p">))</span>
+
+<span class="n">queue</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;123&quot;</span><span class="p">)</span>
+<span class="n">queue</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;123&quot;</span><span class="p">,</span> <span class="n">MessageEnvelope</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;mymessage&quot;</span><span class="p">,</span> <span class="s2">&quot;ABC&quot;</span><span class="p">))</span>
+<span class="n">message</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="s2">&quot;123&quot;</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="n">queue</span><span class="o">.</span><span class="n">complete</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.abandon">
+<span class="sig-name descname"><span class="pre">abandon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.abandon" title="Permalink to this definition"></a></dt>
+<dd><p>Returnes message into the queue and makes it available for all subscribers to receive it again.
+This method is usually used to return a message which could not be processed at the moment
+to repeat the attempt. Messages that cause unrecoverable errors shall be removed permanently
+or/and send to dead letter queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>message</strong> – a message to return.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.clear" title="Permalink to this definition"></a></dt>
+<dd><p>Clears component state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.close" title="Permalink to this definition"></a></dt>
+<dd><p>Closes component and frees used resources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.complete">
+<span class="sig-name descname"><span class="pre">complete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.complete" title="Permalink to this definition"></a></dt>
+<dd><p>Permanently removes a message from the queue.
+This method is usually used to remove the message after successful processing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>message</strong> – a message to remove.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.configure">
+<span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_commons.config.ConfigParams.ConfigParams</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.configure" title="Permalink to this definition"></a></dt>
+<dd><p>Configures object by passing configuration parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config</strong> – configuration parameters to be set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.end_listen">
+<span class="sig-name descname"><span class="pre">end_listen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.end_listen" title="Permalink to this definition"></a></dt>
+<dd><p>Ends listening for incoming messages.
+When this method is call <cite>listen</cite> unblocks the thread and execution continues.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.is_open">
+<span class="sig-name descname"><span class="pre">is_open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.is_open" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if the component is opened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>true if the component has been opened and false otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.listen">
+<span class="sig-name descname"><span class="pre">listen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_messaging.queues.IMessageReceiver.IMessageReceiver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.listen" title="Permalink to this definition"></a></dt>
+<dd><p>Listens for incoming messages and blocks the current thread until queue is closed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p></li>
+<li><p><strong>receiver</strong> – a receiver to receive incoming messages.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.move_to_dead_letter">
+<span class="sig-name descname"><span class="pre">move_to_dead_letter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.move_to_dead_letter" title="Permalink to this definition"></a></dt>
+<dd><p>Permanently removes a message from the queue and sends it to dead letter queue.</p>
+<p>Important: This method is not supported by Kafka.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>message</strong> – a message to be removed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.on_message">
+<span class="sig-name descname"><span class="pre">on_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">cimpl.Message</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.on_message" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the actions to be done after a message is received.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – topic</p></li>
+<li><p><strong>partition</strong> – partition</p></li>
+<li><p><strong>message</strong> – message</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.open" title="Permalink to this definition"></a></dt>
+<dd><p>Opens the component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.peek">
+<span class="sig-name descname"><span class="pre">peek</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span></span></span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.peek" title="Permalink to this definition"></a></dt>
+<dd><p>Peeks a single incoming message from the queue without removing it.
+If there are no messages available in the queue it returns null.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a peeked message.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.peek_batch">
+<span class="sig-name descname"><span class="pre">peek_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.peek_batch" title="Permalink to this definition"></a></dt>
+<dd><p>Peeks multiple incoming messages from the queue without removing them.
+If there are no messages available in the queue it returns an empty list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p></li>
+<li><p><strong>message_count</strong> – a maximum number of messages to peek.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list with peeked messages.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.read_message_count">
+<span class="sig-name descname"><span class="pre">read_message_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.read_message_count" title="Permalink to this definition"></a></dt>
+<dd><p>Reads the current number of messages in the queue to be delivered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a number of messages in the queue.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.receive">
+<span class="sig-name descname"><span class="pre">receive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span></span></span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.receive" title="Permalink to this definition"></a></dt>
+<dd><p>Receives an incoming message and removes it from the queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p></li>
+<li><p><strong>wait_timeout</strong> – a timeout in milliseconds to wait for a message to come.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a received message.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.renew_lock">
+<span class="sig-name descname"><span class="pre">renew_lock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lock_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.renew_lock" title="Permalink to this definition"></a></dt>
+<dd><p>Renews a lock on a message that makes it invisible from other receivers in the queue.
+This method is usually used to extend the message processing time.</p>
+<p>Important: This method is not supported by Kafka.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> – a message to extend its lock.</p></li>
+<li><p><strong>lock_timeout</strong> – a locking timeout in milliseconds.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.send">
+<span class="sig-name descname"><span class="pre">send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correlation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envelop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_messaging.queues.MessageEnvelope.MessageEnvelope</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.send" title="Permalink to this definition"></a></dt>
+<dd><p>Sends a message into the queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correlation_id</strong> – (optional) transaction id to trace execution through call chain.</p></li>
+<li><p><strong>envelop</strong> – a message envelop to be sent.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.set_references">
+<span class="sig-name descname"><span class="pre">set_references</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pip_services3_commons.refer.IReferences.IReferences</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.set_references" title="Permalink to this definition"></a></dt>
+<dd><p>Sets references to dependent components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>references</strong> – references to locate the component dependencies.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.unset_references">
+<span class="sig-name descname"><span class="pre">unset_references</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pip_services3_kafka.queues.KafkaMessageQueue.KafkaMessageQueue.unset_references" title="Permalink to this definition"></a></dt>
+<dd><p>Unsets (clears) previously set references to dependent components.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

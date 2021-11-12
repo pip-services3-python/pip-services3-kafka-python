@@ -6,6 +6,7 @@ import time
 from threading import Lock
 from typing import List, Optional, Any
 
+from confluent_kafka import Message
 from pip_services3_commons.config import ConfigParams
 from pip_services3_commons.errors import ConnectionException, InvalidStateException
 from pip_services3_commons.refer import IUnreferenceable, IReferences, DependencyResolver
@@ -318,9 +319,9 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
         if value is not None:
             return str(value)
 
-    def on_message(self, topic: str, partition: int, message: Any):
+    def on_message(self, topic: str, partition: int, message: Message):
         # Deserialize message
-        message = self._to_message(message)
+        message = self._to_message(message.value())
         if message is None:
             self._logger.error(None, None, "Failed to read received message")
 
