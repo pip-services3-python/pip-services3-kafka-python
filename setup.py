@@ -22,7 +22,7 @@ except:
 
 setup(
     name='pip_services3_kafka',
-    version='3.1.6',
+    version='3.1.7',
     url='http://github.com/pip-services3-python/pip-services3-kafka-python',
     license='MIT',
     author='Conceptual Vision Consulting LLC',
@@ -35,7 +35,7 @@ setup(
     zip_safe=True,
     platforms='any',
     install_requires=[
-        'confluent_kafka',
+        'confluent_kafka >= 1.8.2, < 2.0',
 
         'pip-services3-commons >= 3.3.9, < 4.0',
         'pip-services3-components >= 3.5.0, < 4.0',

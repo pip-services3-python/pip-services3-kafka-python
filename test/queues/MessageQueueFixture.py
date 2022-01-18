@@ -75,7 +75,7 @@ class MessageQueueFixture:
         self._queue.send(None, envelope1)
 
         # Delay until the message is received
-        time.sleep(3)
+        time.sleep(4)
 
         envelope2 = self._queue.peek(None)
         assert envelope2 is not None

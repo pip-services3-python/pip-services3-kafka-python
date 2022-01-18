@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import json
 import time
 from threading import Lock
-from typing import List, Optional, Any
+from typing import List, Optional
 
 from confluent_kafka import Message
 from pip_services3_commons.config import ConfigParams
@@ -276,7 +275,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         self._subscribed = True
 
-    def _from_message(self, message: MessageEnvelope) -> Optional[bytes]:
+    def _from_message(self, message: MessageEnvelope) -> Optional[dict]:
         if message is None:
             return
 
@@ -292,36 +291,35 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
             'timestamp': int(datetime.datetime.now().timestamp() * 1000)
         }
 
-        return json.dumps(msg).encode('utf-8')
+        return msg
 
-    def _to_message(self, msg: bytes) -> Optional[MessageEnvelope]:
+    def _to_message(self, msg: Message) -> Optional[MessageEnvelope]:
         if msg is None:
             return
 
-        msg = json.loads(msg.decode('utf-8'))
-
-        message_type = self.__get_header_by_key(msg.get('headers'), 'message_type')
-        correlation_id = self.__get_header_by_key(msg.get('headers'), 'correlation_id')
+        message_type = self.__get_header_by_key(msg.headers(), 'message_type')
+        correlation_id = self.__get_header_by_key(msg.headers(), 'correlation_id')
 
         message = MessageEnvelope(correlation_id, message_type, None)
-        message.message_id = msg['key']
-        message.sent_time = datetime.datetime.fromtimestamp(int(msg['timestamp']) / 1000)
-        message.set_message_as_string(msg['value'])
+        message.message_id = msg.key().decode('utf-8')
+        message.sent_time = datetime.datetime.fromtimestamp(msg.timestamp()[1] / 1000)
+        message.set_message_as_string(msg.value().decode('utf-8'))
         message.set_reference(msg)
 
         return message
 
-    def __get_header_by_key(self, headers: dict, key: str) -> Optional[str]:
+    def __get_header_by_key(self, headers: list, key: str) -> Optional[str]:
         if headers is None:
             return
 
-        value = headers.get(key)
-        if value is not None:
-            return str(value)
+        for header in headers:
+            k, v = header
+            if k == key:
+                return v.decode('utf-8')
 
     def on_message(self, topic: str, partition: int, message: Message):
         # Deserialize message
-        message = self._to_message(message.value())
+        message = self._to_message(message)
         if message is None:
             self._logger.error(None, None, "Failed to read received message")
 

@@ -337,7 +337,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         self._admin_client.delete_topics([name])
 
-    def publish(self, topic: str, messages: List[Any], options: dict):
+    def publish(self, topic: str, messages: List[dict], options: dict):
         """
         Publish a message to a specified topic
 
@@ -362,7 +362,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             self._producer = self._connection
 
         for message in messages:
-            self._producer.produce(topic=topic, value=message)
+            self._producer.produce(topic=topic, **message)
         self._producer.flush(5)
 
     def subscribe(self, topic: str, group_id: str, options: dict, listener: IKafkaMessageListener):
