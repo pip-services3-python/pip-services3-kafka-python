@@ -1,0 +1,56 @@
+name: Pip.Services Kafka toolkit in Python
+
+on: 
+  push:
+    paths:
+    - '**'
+    - '!README.md'
+
+jobs:
+  Default:
+    runs-on: ubuntu-18.04
+    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+    steps:
+    - uses: actions/checkout@main
+  
+    ############# Prepare #############
+
+    - name: Install prereq and save build number
+      id: build_info
+      uses: pip-devops/actions/python/prepare@v1
+
+    ############# Test #############
+
+    - name: Test the component
+      uses: pip-devops/actions/python/test@v1
+
+    ############# Tag #############
+
+    - name: Delete existing tag
+      uses: dev-drprasad/delete-tag-and-release@v0.1.2
+      with:
+        delete_release: true
+        tag_name: "v${{ steps.build_info.outputs.component_version }}-${{ steps.build_info.outputs.build_number }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Tag branch with the build number
+      uses: tvdias/github-tagger@v0.0.1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        tag: "v${{ steps.build_info.outputs.component_version }}-${{ steps.build_info.outputs.build_number }}"
+
+    ############# Release #############
+
+    - name: Release binary artifacts
+      uses: pip-devops/actions/python/release@v1
+      with:
+        pypi-user: ${{ secrets.PYPI_USER }}
+        pypi-pass: ${{ secrets.PYPI_PASS }}
+
+    ############# Clear #############
+
+    - name: Clean up
+      if: ${{ always() }}
+      uses: pip-devops/actions/python/clear@v1
+    
