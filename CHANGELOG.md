@@ -1,5 +1,10 @@
 # <img src="https://uploads-ssl.webflow.com/5ea5d3315186cf5ec60c3ee4/5edf1c94ce4c859f2b188094_logo.svg" alt="Pip.Services Logo" width="200"> <br/> Kafka components for Pip.Services in Python Changelog
 
+## <a name="3.1.8"></a> 3.1.8 (2022-03-26)
+
+### Bug fixes
+* Fixed build factory Kafka
+
 ## <a name="3.1.7"></a> 3.1.7 (2022-01-18)
 
 ### Features

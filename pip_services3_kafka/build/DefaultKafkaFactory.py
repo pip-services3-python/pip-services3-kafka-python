@@ -5,6 +5,8 @@ from pip_services3_components.build import Factory
 from pip_services3_kafka.connect.KafkaConnection import KafkaConnection
 from pip_services3_kafka.queues.KafkaMessageQueue import KafkaMessageQueue
 
+from .KafkaMessageQueueFactory import KafkaMessageQueueFactory
+
 
 class DefaultKafkaFactory(Factory):
     """
