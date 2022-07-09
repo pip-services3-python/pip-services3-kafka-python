@@ -361,9 +361,12 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             self._connection = Producer(self._client_config)
             self._producer = self._connection
 
+        def on_delivery(err: str, msg):
+            if err is not None:
+                raise err
+
         for message in messages:
-            self._producer.produce(topic=topic, **message)
-        self._producer.flush(5)
+            self._producer.produce(topic=topic, on_delivery=on_delivery, **message)
 
     def subscribe(self, topic: str, group_id: str, options: dict, listener: IKafkaMessageListener):
         """
