@@ -135,7 +135,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         partitions = config.get_as_nullable_string('options.readable_partitions')
         partitions = None if partitions is None else [int(p) for p in partitions.split(';')]
 
-        self._readable_partitions = self._readable_partitions or partitions
+        self._readable_partitions = partitions or self._readable_partitions
 
     def set_references(self, references: IReferences):
         """
