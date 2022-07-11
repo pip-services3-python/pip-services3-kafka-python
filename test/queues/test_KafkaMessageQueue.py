@@ -21,7 +21,7 @@ class TestKafkaMessageQueue:
     fixture: MessageQueueFixture
 
     def setup_method(self):
-        queue_config = ConfigParams.from_tuples(
+        self.queue_config = ConfigParams.from_tuples(
             'queue', broker_topic,
             'connection.protocol', 'tcp',
             'connection.host', broker_host,
@@ -29,11 +29,14 @@ class TestKafkaMessageQueue:
             'credential.username', broker_user,
             'credential.password', broker_pass,
             'credential.mechanism', 'plain',
-            'options.autosubscribe', True
+            'options.autosubscribe', True,
+            'options.num_partitions', 2,
+            'options.readable_partitions', '1',
+            'options.write_partition', '1'
         )
 
         self.queue = KafkaMessageQueue(broker_topic)
-        self.queue.configure(queue_config)
+        self.queue.configure(self.queue_config)
 
         self.fixture = MessageQueueFixture(self.queue)
 

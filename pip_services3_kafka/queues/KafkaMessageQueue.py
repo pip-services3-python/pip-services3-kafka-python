@@ -39,6 +39,10 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
           - username:                    user name
           - password:                    user password
         - options:
+          - num_partitions:       (optional) number of partitions of the created topic (default: 1)
+          - replication_factor:   (optional) kafka replication factor of the topic (default: 1)
+          - readable_partitions:      (optional) list of partition indexes to be read (default: all)
+          - write_partition:      (optional) write partition index (default: uses the configured built-in partitioner)
           - autosubscribe:        (optional) true to automatically subscribe on option (default: false)
           - acks                  (optional) control the number of required acks: -1 - all, 0 - none, 1 - only leader (default: -1)
           - log_level:            (optional) log level 0 - None, 1 - Error, 2 - Warn, 3 - Info, 4 - Debug (default: 1)
@@ -215,6 +219,10 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
                 "Kafka connection is not opened"
             )
 
+        # create topic if it does not exist
+        if self._get_topic() not in self._connection.read_queue_names():
+            self._connection.create_queue(self._get_topic())
+
         # Subscribe right away
         if self._auto_subscribe:
             self._subscribe(correlation_id)
@@ -268,7 +276,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
         options = {
             'from_beginning': 'beginning' if self._from_beginning else None,
             'enable.auto.commit': self._auto_commit,
-            # 'partitionsConsumedConcurrently': self._read_partitions
+            # 'partitionsConsumedConcurrently': self._readable_partitions
         }
 
         self._connection.subscribe(topic, self._group_id, options, self)
@@ -279,15 +287,13 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
         if message is None:
             return
 
-        headers = {
-            'message_type': message.message_type,
-            'correlation_id': message.correlation_id
-        }
-
         msg = {
             'key': message.message_id,
             'value': message.get_message_as_string(),
-            'headers': headers,
+            'headers': {
+                'message_type': message.message_type,
+                'correlation_id': message.correlation_id
+            },
             'timestamp': int(datetime.datetime.now().timestamp() * 1000)
         }
 
@@ -451,7 +457,7 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
 
         msg = self._from_message(envelop)
         topic = self.get_name() or self._topic
-        self._connection.publish(topic, [msg], options={'acks': self._acks})
+        self._connection.publish(topic, [msg])
 
     def renew_lock(self, message: MessageEnvelope, lock_timeout: int):
         """

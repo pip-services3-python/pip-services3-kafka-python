@@ -1,5 +1,14 @@
 # <img src="https://uploads-ssl.webflow.com/5ea5d3315186cf5ec60c3ee4/5edf1c94ce4c859f2b188094_logo.svg" alt="Pip.Services Logo" width="200"> <br/> Kafka components for Pip.Services in Python Changelog
 
+## <a name="3.2.0"></a> 3.2.0 (2022-07-11)
+
+### Features
+* Added more config parameters (num_partitions, replication_factor, readable_partitions, write_partition)
+* Optimize Producers creation and caching
+
+### Bug fixes
+* Fixed kafka publish method, added on_delivery error callback
+
 ## <a name="3.1.9-3.1.10"></a> 3.1.9 - 3.1.10 (2022-07-09)
 
 ### Bug fixes

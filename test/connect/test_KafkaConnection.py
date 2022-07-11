@@ -27,7 +27,10 @@ class TestKafkaConnection:
             'connection.port', broker_port,
             'credential.username', broker_user,
             'credential.password', broker_pass,
-            'credential.mechanism', 'plain'
+            'credential.mechanism', 'plain',
+            'options.num_partitions', 2,
+            'options.readable_partitions', '1',
+            'options.write_partition', '1'
         )
 
         self.connection = KafkaConnection()

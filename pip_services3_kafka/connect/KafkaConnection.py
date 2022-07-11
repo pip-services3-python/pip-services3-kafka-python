@@ -9,7 +9,7 @@ from threading import Thread
 from typing import Any, List, Optional
 
 from confluent_kafka import Producer, Consumer, TopicPartition, KafkaError
-from confluent_kafka.admin import AdminClient
+from confluent_kafka.admin import AdminClient, ClusterMetadata
 from confluent_kafka.cimpl import NewTopic
 from pip_services3_commons.config import ConfigParams, IConfigurable
 from pip_services3_commons.errors import ConnectionException, InvalidStateException
@@ -42,6 +42,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
             - username:                  user name
             - password:                  user password
         - options:
+            - num_partitions:       (optional) number of partitions of the created topic (default: 1)
+            - replication_factor:   (optional) kafka replication factor of the topic (default: 1)
+            - readable_partitions:  (optional) list of partition indexes to be read (default: all)
+            - write_partition:      (optional) write partition index (default: uses the configured built-in partitioner)
             - log_level:            (optional) log level 0 - None, 1 - Error, 2 - Warn, 3 - Info, 4 - Debug (default: 1)
             - connect_timeout:      (optional) number of milliseconds to connect to broker (default: 1000)
             - max_retries:          (optional) maximum retry attempts (default: 5)
@@ -100,7 +104,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._max_retries: int = 5
         self._retry_timeout: int = 30000
         self._request_timeout: int = 30000
-
+        self._num_partitions: int = 1
+        self._replication_factor: int = 1
+        self._readable_partitions: List[int] = [1]
+        self._write_partition: int = 0
         self.__stop_events: List[threading.Event] = []
 
     def configure(self, config: ConfigParams):
@@ -119,6 +126,16 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._max_retries = config.get_as_integer_with_default('options.max_retries', self._max_retries)
         self._retry_timeout = config.get_as_integer_with_default('options.retry_timeout', self._retry_timeout)
         self._request_timeout = config.get_as_integer_with_default('options.request_timeout', self._request_timeout)
+        self._num_partitions = config.get_as_integer_with_default('options.num_partitions', self._num_partitions)
+        self._replication_factor = config.get_as_integer_with_default('options.replication_factor',
+                                                                      self._replication_factor)
+
+        self._write_partition = config.get_as_integer_with_default('options.write_partition', self._write_partition)
+
+        partitions = config.get_as_nullable_string('options.readable_partitions')
+        partitions = None if partitions is None else [int(p) for p in partitions.split(';')]
+
+        self._readable_partitions = self._readable_partitions or partitions
 
     def set_references(self, references: IReferences):
         """
@@ -323,7 +340,10 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._check_open()
         self._connect_to_admin()
 
-        self._admin_client.create_topics([NewTopic(topic=name, num_partitions=1, replication_factor=1)])
+        res = self._admin_client.create_topics([NewTopic(topic=name,
+                                                         num_partitions=self._num_partitions,
+                                                         replication_factor=self._replication_factor)])
+        res[name].result()
 
     def delete_queue(self, name: str):
         """
@@ -337,32 +357,18 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
 
         self._admin_client.delete_topics([name])
 
-    def publish(self, topic: str, messages: List[dict], options: dict):
+    def publish(self, topic: str, messages: List[dict]):
         """
         Publish a message to a specified topic
 
         :param topic: a topic where the message will be placed
         :param messages: a list of messages to be published
-        :param options: publishing options
         """
         # Check for open connection
         self._check_open()
 
-        options = options or {}
-
-        if options.get('compression'):
-            options['compression.type'] = options.pop('compression')
-        if options.get('timeout'):
-            options['message.timeout.ms'] = options.pop('timeout')
-
-        # Reconfigure Producer
-        if options != {}:
-            self._client_config.update(options)
-            self._connection = Producer(self._client_config)
-            self._producer = self._connection
-
         for message in messages:
-            self._producer.produce(topic=topic, **message)
+            self._producer.produce(topic=topic, partition=self._write_partition, **message)
         self._producer.flush(5)
 
     def subscribe(self, topic: str, group_id: str, options: dict, listener: IKafkaMessageListener):
@@ -414,11 +420,12 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 msg = consumer.poll(1)
                 if msg is None:
                     continue
-                if not msg.error():
-                    listener.on_message(msg.topic(), msg.partition(), msg)
-                elif msg.error().code() != KafkaError._PARTITION_EOF:
-                    sys.stderr.write(f'Error consume message: {msg.error()}')
-                    event.clear()
+                if msg.partition() in self._readable_partitions:
+                    if not msg.error():
+                        listener.on_message(msg.topic(), msg.partition(), msg)
+                    elif msg.error().code() != KafkaError._PARTITION_EOF:
+                        sys.stderr.write(f'Error consume message: {msg.error()}')
+                        event.clear()
         except Exception as err:
             sys.stderr.write(f'Error processing message in the Consumer handler: {err}')
             self._logger.error(None, err, "Error processing message in the Consumer handler")
