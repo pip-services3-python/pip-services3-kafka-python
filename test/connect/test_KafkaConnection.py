@@ -29,7 +29,6 @@ class TestKafkaConnection:
             'credential.password', broker_pass,
             'credential.mechanism', 'plain',
             'options.num_partitions', 2,
-            'options.readable_partitions', '1',
             'options.write_partition', '1'
         )
 

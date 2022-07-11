@@ -3,7 +3,7 @@
 ## <a name="3.2.0"></a> 3.2.0 (2022-07-11)
 
 ### Features
-* Added more config parameters (num_partitions, replication_factor, readable_partitions, write_partition)
+* Added more config parameters (num_partitions, replication_factor, write_partition)
 * Optimize Producers creation and caching
 
 ### Bug fixes

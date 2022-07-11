@@ -41,7 +41,6 @@ class KafkaMessageQueue(MessageQueue, IKafkaMessageListener, IUnreferenceable, I
         - options:
           - num_partitions:       (optional) number of partitions of the created topic (default: 1)
           - replication_factor:   (optional) kafka replication factor of the topic (default: 1)
-          - readable_partitions:      (optional) list of partition indexes to be read (default: all)
           - write_partition:      (optional) write partition index (default: uses the configured built-in partitioner)
           - autosubscribe:        (optional) true to automatically subscribe on option (default: false)
           - acks                  (optional) control the number of required acks: -1 - all, 0 - none, 1 - only leader (default: -1)

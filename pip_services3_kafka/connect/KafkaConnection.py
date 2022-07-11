@@ -9,7 +9,7 @@ from threading import Thread
 from typing import Any, List, Optional
 
 from confluent_kafka import Producer, Consumer, TopicPartition, KafkaError
-from confluent_kafka.admin import AdminClient, ClusterMetadata
+from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
 from pip_services3_commons.config import ConfigParams, IConfigurable
 from pip_services3_commons.errors import ConnectionException, InvalidStateException
@@ -44,7 +44,6 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         - options:
             - num_partitions:       (optional) number of partitions of the created topic (default: 1)
             - replication_factor:   (optional) kafka replication factor of the topic (default: 1)
-            - readable_partitions:  (optional) list of partition indexes to be read (default: all)
             - write_partition:      (optional) write partition index (default: uses the configured built-in partitioner)
             - log_level:            (optional) log level 0 - None, 1 - Error, 2 - Warn, 3 - Info, 4 - Debug (default: 1)
             - connect_timeout:      (optional) number of milliseconds to connect to broker (default: 1000)
@@ -106,7 +105,6 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._request_timeout: int = 30000
         self._num_partitions: int = 1
         self._replication_factor: int = 1
-        self._readable_partitions: List[int] = [1]
         self._write_partition: int = 0
         self.__stop_events: List[threading.Event] = []
 
@@ -131,11 +129,6 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                                                                       self._replication_factor)
 
         self._write_partition = config.get_as_integer_with_default('options.write_partition', self._write_partition)
-
-        partitions = config.get_as_nullable_string('options.readable_partitions')
-        partitions = None if partitions is None else [int(p) for p in partitions.split(';')]
-
-        self._readable_partitions = partitions or self._readable_partitions
 
     def set_references(self, references: IReferences):
         """
@@ -420,12 +413,11 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
                 msg = consumer.poll(1)
                 if msg is None:
                     continue
-                if msg.partition() in self._readable_partitions:
-                    if not msg.error():
-                        listener.on_message(msg.topic(), msg.partition(), msg)
-                    elif msg.error().code() != KafkaError._PARTITION_EOF:
-                        sys.stderr.write(f'Error consume message: {msg.error()}')
-                        event.clear()
+                if not msg.error():
+                    listener.on_message(msg.topic(), msg.partition(), msg)
+                elif msg.error().code() != KafkaError._PARTITION_EOF:
+                    sys.stderr.write(f'Error consume message: {msg.error()}')
+                    event.clear()
         except Exception as err:
             sys.stderr.write(f'Error processing message in the Consumer handler: {err}')
             self._logger.error(None, err, "Error processing message in the Consumer handler")
