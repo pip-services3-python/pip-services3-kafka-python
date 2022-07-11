@@ -105,7 +105,7 @@ class KafkaConnection(IMessageQueueConnection, IReferenceable, IConfigurable, IO
         self._request_timeout: int = 30000
         self._num_partitions: int = 1
         self._replication_factor: int = 1
-        self._write_partition: int = 0
+        self._write_partition = None
         self.__stop_events: List[threading.Event] = []
 
     def configure(self, config: ConfigParams):
